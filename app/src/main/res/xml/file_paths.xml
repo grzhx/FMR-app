@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 应用私有文件目录 -->
+    <files-path
+        name="files"
+        path="." />
+    
+    <!-- 应用缓存目录 -->
+    <cache-path
+        name="cache"
+        path="." />
+    
+    <!-- 外部存储的应用私有目录 -->
+    <external-files-path
+        name="external_files"
+        path="." />
+    
+    <!-- 外部存储的缓存目录 -->
+    <external-cache-path
+        name="external_cache"
+        path="." />
+    
+    <!-- 病历文书存储目录 -->
+    <external-files-path
+        name="documents"
+        path="Documents/" />
+    
+    <!-- 图片存储目录 -->
+    <external-files-path
+        name="images"
+        path="Pictures/" />
+</paths>
