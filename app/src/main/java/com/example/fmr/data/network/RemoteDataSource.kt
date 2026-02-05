@@ -65,7 +65,7 @@ class RemoteDataSource(
      */
     suspend fun updateMember(member: FamilyMember): NetworkResult<Unit> {
         return safeApiCall {
-            apiService.updateMember(member.id, member.toAddRequest())
+            apiService.updateMember(member.id, member.toUpdateRequest())
         }
     }
     
@@ -75,6 +75,24 @@ class RemoteDataSource(
     suspend fun deleteMember(memberId: Long): NetworkResult<Unit> {
         return safeApiCall {
             apiService.deleteMember(memberId)
+        }
+    }
+    
+    /**
+     * 获取成员详情（含健康档案）
+     */
+    suspend fun getMemberProfile(memberId: Long): NetworkResult<MemberProfileDto> {
+        return safeApiCall {
+            apiService.getMemberDetail(memberId)
+        }
+    }
+    
+    /**
+     * 更新健康档案
+     */
+    suspend fun updateHealthProfile(memberId: Long, request: UpdateHealthProfileRequest): NetworkResult<Unit> {
+        return safeApiCall {
+            apiService.updateHealthProfile(memberId, request)
         }
     }
 

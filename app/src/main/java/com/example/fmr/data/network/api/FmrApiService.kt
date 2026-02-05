@@ -56,7 +56,7 @@ interface FmrApiService {
     @PUT("family/members/{id}")
     suspend fun updateMember(
         @Path("id") id: Long,
-        @Body request: AddMemberRequest
+        @Body request: UpdateMemberRequest
     ): Response<ApiResponse<Unit>>
     
     /**
@@ -66,6 +66,17 @@ interface FmrApiService {
     @DELETE("family/members/{id}")
     suspend fun deleteMember(
         @Path("id") id: Long
+    ): Response<ApiResponse<Unit>>
+
+    /**
+     * 更新健康档案
+     * @param id 成员ID
+     * @param request 健康档案请求
+     */
+    @PUT("family/members/{id}/health-profile")
+    suspend fun updateHealthProfile(
+        @Path("id") id: Long,
+        @Body request: UpdateHealthProfileRequest
     ): Response<ApiResponse<Unit>>
 
     // ==================== 用户认证模块 ====================

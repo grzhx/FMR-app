@@ -4,7 +4,9 @@ import com.example.fmr.data.dao.FamilyMemberDao
 import com.example.fmr.data.entity.FamilyMember
 import com.example.fmr.data.network.NetworkManager
 import com.example.fmr.data.network.RemoteDataSource
+import com.example.fmr.data.network.model.MemberProfileDto
 import com.example.fmr.data.network.model.NetworkResult
+import com.example.fmr.data.network.model.UpdateHealthProfileRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
@@ -221,6 +223,26 @@ class FamilyRepository(
                 SyncResult.SyncError(result.throwable.message ?: "同步失败")
             }
             else -> SyncResult.SyncError("未知错误")
+        }
+    }
+    
+    /**
+     * 获取成员详情（含健康档案）
+     */
+    suspend fun getMemberProfile(memberId: Long): MemberProfileDto? {
+        if (!isOnline()) return null
+        return when (val result = remoteDataSource?.getMemberProfile(memberId)) {
+            is NetworkResult.Success -> result.data
+            else -> null
+        }
+    }
+    
+    /**
+     * 更新健康档案
+     */
+    suspend fun updateHealthProfile(memberId: Long, request: UpdateHealthProfileRequest) {
+        if (isOnline()) {
+            remoteDataSource?.updateHealthProfile(memberId, request)
         }
     }
     

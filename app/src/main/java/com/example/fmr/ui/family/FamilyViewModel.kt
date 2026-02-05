@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.fmr.data.entity.FamilyMember
 import com.example.fmr.data.network.ConnectionState
 import com.example.fmr.data.network.NetworkManager
+import com.example.fmr.data.network.model.MemberProfileDto
+import com.example.fmr.data.network.model.UpdateHealthProfileRequest
 import com.example.fmr.data.repository.FamilyRepository
 import com.example.fmr.data.repository.SyncResult
 import kotlinx.coroutines.flow.*
@@ -31,6 +33,10 @@ class FamilyViewModel(
     // 当前选中的成员
     private val _selectedMember = MutableStateFlow<FamilyMember?>(null)
     val selectedMember: StateFlow<FamilyMember?> = _selectedMember.asStateFlow()
+    
+    // 成员详情（含健康档案）
+    private val _memberProfile = MutableStateFlow<MemberProfileDto?>(null)
+    val memberProfile: StateFlow<MemberProfileDto?> = _memberProfile.asStateFlow()
     
     // 添加/编辑成员表单状态
     private val _formState = MutableStateFlow(MemberFormState())
@@ -310,6 +316,59 @@ class FamilyViewModel(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(error = "加载失败：${e.message}")
+                }
+            }
+        }
+    }
+    
+    /**
+     * 加载成员详情（含健康档案）
+     */
+    fun loadMemberProfile(memberId: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val profile = familyRepository.getMemberProfile(memberId)
+                _memberProfile.value = profile
+                _uiState.update { it.copy(isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, error = "加载失败：${e.message}")
+                }
+            }
+        }
+    }
+    
+    /**
+     * 更新健康档案
+     */
+    fun updateHealthProfile(
+        memberId: Long,
+        height: Double?,
+        weight: Double?,
+        bloodType: String?,
+        allergies: List<String>?,
+        chronicDiseases: List<String>?
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val request = UpdateHealthProfileRequest(
+                    height = height,
+                    weight = weight,
+                    bloodType = bloodType,
+                    allergies = allergies,
+                    chronicDiseases = chronicDiseases
+                )
+                familyRepository.updateHealthProfile(memberId, request)
+                _uiState.update {
+                    it.copy(isLoading = false, successMessage = "健康档案更新成功")
+                }
+                // 重新加载档案
+                loadMemberProfile(memberId)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, error = "更新失败：${e.message}")
                 }
             }
         }

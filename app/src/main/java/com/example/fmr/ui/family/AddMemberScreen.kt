@@ -1,7 +1,13 @@
 package com.example.fmr.ui.family
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -10,7 +16,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.fmr.data.entity.FamilyMember
 
 /**
@@ -21,7 +32,7 @@ import com.example.fmr.data.entity.FamilyMember
 fun AddMemberScreen(
     uiState: FamilyUiState,
     onNavigateBack: () -> Unit,
-    onSaveMember: (name: String, gender: Int, birthDate: String, relation: String, role: Int) -> Unit,
+    onSaveMember: (name: String, gender: Int, birthDate: String, relation: String, role: Int, avatarUrl: String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf("") }
@@ -31,6 +42,12 @@ fun AddMemberScreen(
     var isAdmin by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showRelationMenu by remember { mutableStateOf(false) }
+    var avatarUri by remember { mutableStateOf<Uri?>(null) }
+    
+    val context = LocalContext.current
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri -> avatarUri = uri }
     
     val relations = listOf(
         FamilyMember.RELATION_SELF to "本人",
@@ -64,7 +81,8 @@ fun AddMemberScreen(
                                 gender,
                                 birthDate,
                                 relation,
-                                if (isAdmin) FamilyMember.ROLE_ADMIN else FamilyMember.ROLE_MEMBER
+                                if (isAdmin) FamilyMember.ROLE_ADMIN else FamilyMember.ROLE_MEMBER,
+                                avatarUri?.toString()
                             )
                         },
                         enabled = !uiState.isLoading
@@ -81,8 +99,43 @@ fun AddMemberScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // 头像选择
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { imagePickerLauncher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (avatarUri != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(avatarUri)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "头像",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.CameraAlt,
+                        contentDescription = "选择头像",
+                        modifier = Modifier.size(40.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Text(
+                text = "点击上传头像",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
             // 姓名输入
             OutlinedTextField(
                 value = name,
@@ -238,7 +291,8 @@ fun AddMemberScreen(
                         gender,
                         birthDate,
                         relation,
-                        if (isAdmin) FamilyMember.ROLE_ADMIN else FamilyMember.ROLE_MEMBER
+                        if (isAdmin) FamilyMember.ROLE_ADMIN else FamilyMember.ROLE_MEMBER,
+                        avatarUri?.toString()
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),

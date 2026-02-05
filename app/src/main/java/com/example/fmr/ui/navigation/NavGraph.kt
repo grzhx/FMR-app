@@ -1,6 +1,7 @@
 package com.example.fmr.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
@@ -9,6 +10,8 @@ import androidx.navigation.compose.composable
 import com.example.fmr.ui.family.AddMemberScreen
 import com.example.fmr.ui.family.FamilyListScreen
 import com.example.fmr.ui.family.FamilyViewModel
+import com.example.fmr.ui.family.HealthProfileScreen
+import com.example.fmr.ui.family.MemberDetailScreen
 import com.example.fmr.ui.home.HomeScreen
 import com.example.fmr.ui.home.HomeViewModel
 import com.example.fmr.ui.lifestyle.LifestyleScreen
@@ -41,6 +44,8 @@ object Routes {
 
     // 子页面
     const val ADD_MEMBER = "add_member"
+    const val MEMBER_DETAIL = "member_detail/{memberId}"
+    const val HEALTH_PROFILE = "health_profile/{memberId}"
     const val ADD_RECORD = "add_record"
     const val ADD_MEDICATION = "add_medication"
     const val ADD_REPORT = "add_report"
@@ -52,6 +57,8 @@ object Routes {
 
     // 辅助函数
     fun reportDetail(reportId: Long) = "report_detail/$reportId"
+    fun memberDetail(memberId: Long) = "member_detail/$memberId"
+    fun healthProfile(memberId: Long) = "health_profile/$memberId"
 }
 
 /**
@@ -108,7 +115,7 @@ fun NavGraph(
                 familyMembers = familyMembers,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAddMember = { navController.navigate(Routes.ADD_MEMBER) },
-                onMemberClick = { /* TODO: 查看成员详情 */ },
+                onMemberClick = { member -> navController.navigate(Routes.memberDetail(member.id)) },
                 onDeleteMember = { memberId -> familyViewModel.deleteMember(memberId) }
             )
         }
@@ -122,8 +129,51 @@ fun NavGraph(
                     familyViewModel.clearSuccessMessage()
                     navController.popBackStack() 
                 },
-                onSaveMember = { name, gender, birthDate, relation, role ->
-                    familyViewModel.addMember(name, gender, birthDate, relation, role)
+                onSaveMember = { name, gender, birthDate, relation, role, avatarUrl ->
+                    familyViewModel.addMember(name, gender, birthDate, relation, role, avatarUrl)
+                }
+            )
+        }
+        
+        composable(Routes.MEMBER_DETAIL) { backStackEntry ->
+            val memberId = backStackEntry.arguments?.getString("memberId")?.toLongOrNull() ?: return@composable
+            val uiState by familyViewModel.uiState.collectAsState()
+            val familyMembers by familyViewModel.familyMembers.collectAsState()
+            val member = familyMembers.find { it.id == memberId }
+            
+            MemberDetailScreen(
+                member = member,
+                uiState = uiState,
+                onNavigateBack = { 
+                    familyViewModel.clearSuccessMessage()
+                    navController.popBackStack() 
+                },
+                onUpdateMember = { familyViewModel.updateMember(it) },
+                onDeleteMember = { 
+                    familyViewModel.deleteMember(it)
+                    navController.popBackStack()
+                },
+                onNavigateToHealthProfile = { navController.navigate(Routes.healthProfile(it)) }
+            )
+        }
+        
+        composable(Routes.HEALTH_PROFILE) { backStackEntry ->
+            val memberId = backStackEntry.arguments?.getString("memberId")?.toLongOrNull() ?: return@composable
+            val uiState by familyViewModel.uiState.collectAsState()
+            val memberProfile by familyViewModel.memberProfile.collectAsState()
+            
+            LaunchedEffect(memberId) { familyViewModel.loadMemberProfile(memberId) }
+            
+            HealthProfileScreen(
+                memberId = memberId,
+                profile = memberProfile,
+                uiState = uiState,
+                onNavigateBack = { 
+                    familyViewModel.clearSuccessMessage()
+                    navController.popBackStack() 
+                },
+                onSaveProfile = { id, height, weight, bloodType, allergies, chronicDiseases ->
+                    familyViewModel.updateHealthProfile(id, height, weight, bloodType, allergies, chronicDiseases)
                 }
             )
         }

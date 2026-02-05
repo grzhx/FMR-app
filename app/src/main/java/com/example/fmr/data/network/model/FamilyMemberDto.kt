@@ -141,6 +141,49 @@ data class MemberProfileDto(
 }
 
 /**
+ * 更新成员请求DTO
+ */
+data class UpdateMemberRequest(
+    @SerializedName("name")
+    val name: String,
+    
+    @SerializedName("gender")
+    val gender: Int,
+    
+    @SerializedName("birthDate")
+    val birthDate: String,
+    
+    @SerializedName("relation")
+    val relation: String,
+    
+    @SerializedName("role")
+    val role: Int? = null,
+    
+    @SerializedName("avatarUrl")
+    val avatarUrl: String? = null
+)
+
+/**
+ * 更新健康档案请求DTO
+ */
+data class UpdateHealthProfileRequest(
+    @SerializedName("height")
+    val height: Double? = null,
+    
+    @SerializedName("weight")
+    val weight: Double? = null,
+    
+    @SerializedName("bloodType")
+    val bloodType: String? = null,
+    
+    @SerializedName("allergies")
+    val allergies: List<String>? = null,
+    
+    @SerializedName("chronicDiseases")
+    val chronicDiseases: List<String>? = null
+)
+
+/**
  * FamilyMember扩展函数：转换为请求DTO
  */
 fun FamilyMember.toAddRequest(): AddMemberRequest {
@@ -154,5 +197,16 @@ fun FamilyMember.toAddRequest(): AddMemberRequest {
         avatarUrl = avatarUrl,
         viewAll = viewAll,
         editAll = editAll
+    )
+}
+
+fun FamilyMember.toUpdateRequest(): UpdateMemberRequest {
+    return UpdateMemberRequest(
+        name = name,
+        gender = gender,
+        birthDate = birthDate,
+        relation = relation,
+        role = role,
+        avatarUrl = avatarUrl
     )
 }
