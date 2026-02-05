@@ -21,11 +21,12 @@ import com.example.fmr.data.entity.MedicalRecord
 fun AddRecordScreen(
     uiState: RecordUiState,
     familyMembers: List<FamilyMember>,
+    preselectedMemberId: Long? = null,
     onNavigateBack: () -> Unit,
     onSaveRecord: (memberId: Long, recordType: Int, hospitalName: String?, department: String?, doctorName: String?, visitDate: String?, mainDiagnosis: String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedMemberId by remember { mutableStateOf<Long?>(null) }
+    var selectedMemberId by remember { mutableStateOf(preselectedMemberId) }
     var recordType by remember { mutableIntStateOf(MedicalRecord.TYPE_OUTPATIENT) }
     var hospitalName by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }

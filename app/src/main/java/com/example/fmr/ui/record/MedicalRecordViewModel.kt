@@ -91,6 +91,13 @@ class MedicalRecordViewModel(
     }
     
     /**
+     * 加载指定成员的病历记录
+     */
+    fun loadMemberRecords(memberId: Long) {
+        _currentMemberId.value = memberId
+    }
+    
+    /**
      * 添加选择的文件
      */
     fun addSelectedFile(file: SelectedFile) {

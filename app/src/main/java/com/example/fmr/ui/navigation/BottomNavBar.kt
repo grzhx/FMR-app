@@ -70,7 +70,6 @@ fun BottomNavBar(
     val items = listOf(
         BottomNavItem.Home,
         BottomNavItem.Family,
-        BottomNavItem.Records,
         BottomNavItem.Lifestyle,
         BottomNavItem.Reports,
         BottomNavItem.Profile

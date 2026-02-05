@@ -12,6 +12,7 @@ import com.example.fmr.ui.family.FamilyListScreen
 import com.example.fmr.ui.family.FamilyViewModel
 import com.example.fmr.ui.family.HealthProfileScreen
 import com.example.fmr.ui.family.MemberDetailScreen
+import com.example.fmr.ui.family.MemberEditScreen
 import com.example.fmr.ui.home.HomeScreen
 import com.example.fmr.ui.home.HomeViewModel
 import com.example.fmr.ui.lifestyle.LifestyleScreen
@@ -45,8 +46,10 @@ object Routes {
     // 子页面
     const val ADD_MEMBER = "add_member"
     const val MEMBER_DETAIL = "member_detail/{memberId}"
+    const val MEMBER_EDIT = "member_edit/{memberId}"
     const val HEALTH_PROFILE = "health_profile/{memberId}"
     const val ADD_RECORD = "add_record"
+    const val ADD_MEMBER_RECORD = "add_member_record/{memberId}"
     const val ADD_MEDICATION = "add_medication"
     const val ADD_REPORT = "add_report"
     const val REPORT_DETAIL = "report_detail/{reportId}"
@@ -58,7 +61,9 @@ object Routes {
     // 辅助函数
     fun reportDetail(reportId: Long) = "report_detail/$reportId"
     fun memberDetail(memberId: Long) = "member_detail/$memberId"
+    fun memberEdit(memberId: Long) = "member_edit/$memberId"
     fun healthProfile(memberId: Long) = "health_profile/$memberId"
+    fun addMemberRecord(memberId: Long) = "add_member_record/$memberId"
 }
 
 /**
@@ -67,7 +72,6 @@ object Routes {
 val mainRoutes = listOf(
     Routes.HOME,
     Routes.FAMILY_LIST,
-    Routes.RECORD_LIST,
     Routes.LIFESTYLE,
     Routes.REPORT_LIST,
     Routes.PROFILE
@@ -144,21 +148,80 @@ fun NavGraph(
             val memberId = backStackEntry.arguments?.getString("memberId")?.toLongOrNull() ?: return@composable
             val uiState by familyViewModel.uiState.collectAsState()
             val familyMembers by familyViewModel.familyMembers.collectAsState()
+            val memberProfile by familyViewModel.memberProfile.collectAsState()
+            val memberRecords by recordViewModel.memberRecords.collectAsState()
+            val recordUiState by recordViewModel.uiState.collectAsState()
+            val selectedFiles by recordViewModel.selectedFiles.collectAsState()
+            val importTaskStatus by recordViewModel.importTaskStatus.collectAsState()
+            val importProgress by recordViewModel.importProgress.collectAsState()
             val member = familyMembers.find { it.id == memberId }
             
+            LaunchedEffect(memberId) {
+                familyViewModel.loadMemberProfile(memberId)
+                recordViewModel.loadMemberRecords(memberId)
+            }
+            
             MemberDetailScreen(
+                member = member,
+                memberProfile = memberProfile,
+                memberRecords = memberRecords,
+                uiState = uiState,
+                recordUiState = recordUiState,
+                selectedFiles = selectedFiles,
+                importTaskStatus = importTaskStatus,
+                importProgress = importProgress,
+                onNavigateBack = { 
+                    familyViewModel.clearSuccessMessage()
+                    navController.popBackStack() 
+                },
+                onNavigateToEditMember = { navController.navigate(Routes.memberEdit(memberId)) },
+                onNavigateToEditHealth = { navController.navigate(Routes.healthProfile(memberId)) },
+                onNavigateToAddRecord = { navController.navigate(Routes.addMemberRecord(memberId)) },
+                onDeleteMember = { 
+                    familyViewModel.deleteMember(it)
+                    navController.popBackStack()
+                },
+                onDeleteRecord = { recordViewModel.deleteRecord(it) },
+                onAddSelectedFile = { recordViewModel.addSelectedFile(it) },
+                onRemoveSelectedFile = { recordViewModel.removeSelectedFile(it) },
+                onStartImport = { recordViewModel.startImportTask(it) },
+                onResetImport = { recordViewModel.resetImportStatus() }
+            )
+        }
+        
+        composable(Routes.MEMBER_EDIT) { backStackEntry ->
+            val memberId = backStackEntry.arguments?.getString("memberId")?.toLongOrNull() ?: return@composable
+            val uiState by familyViewModel.uiState.collectAsState()
+            val familyMembers by familyViewModel.familyMembers.collectAsState()
+            val member = familyMembers.find { it.id == memberId }
+            
+            MemberEditScreen(
                 member = member,
                 uiState = uiState,
                 onNavigateBack = { 
                     familyViewModel.clearSuccessMessage()
                     navController.popBackStack() 
                 },
-                onUpdateMember = { familyViewModel.updateMember(it) },
-                onDeleteMember = { 
-                    familyViewModel.deleteMember(it)
-                    navController.popBackStack()
+                onUpdateMember = { familyViewModel.updateMember(it) }
+            )
+        }
+        
+        composable(Routes.ADD_MEMBER_RECORD) { backStackEntry ->
+            val memberId = backStackEntry.arguments?.getString("memberId")?.toLongOrNull() ?: return@composable
+            val uiState by recordViewModel.uiState.collectAsState()
+            val familyMembers by familyViewModel.familyMembers.collectAsState()
+            
+            AddRecordScreen(
+                uiState = uiState,
+                familyMembers = familyMembers,
+                preselectedMemberId = memberId,
+                onNavigateBack = { 
+                    recordViewModel.clearSuccessMessage()
+                    navController.popBackStack() 
                 },
-                onNavigateToHealthProfile = { navController.navigate(Routes.healthProfile(it)) }
+                onSaveRecord = { mId, recordType, hospitalName, department, doctorName, visitDate, mainDiagnosis ->
+                    recordViewModel.addRecord(mId, recordType, hospitalName, department, doctorName, visitDate, mainDiagnosis)
+                }
             )
         }
         
