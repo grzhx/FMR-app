@@ -182,7 +182,61 @@ Authorization: Bearer {token}
 
 ---
 
-### 4. 获取当前用户信息
+### 4. 更新用户信息
+
+更新当前登录用户的个人信息。
+
+**请求**
+
+```
+PUT /api/auth/info
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**请求体**
+
+```json
+{
+  "nickname": "新昵称",
+  "phone": "13800138001",
+  "email": "user@example.com",
+  "avatarUrl": "https://example.com/new-avatar.jpg"
+}
+```
+
+**参数说明**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| nickname | String | 否 | 昵称（最多20字符） |
+| phone | String | 否 | 手机号（11位中国大陆手机号） |
+| email | String | 否 | 邮箱 |
+| avatarUrl | String | 否 | 头像URL |
+
+**成功响应**
+
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": null,
+  "timestamp": 1706500000000
+}
+```
+
+**错误响应**
+
+| 错误码 | 说明 |
+|--------|------|
+| 400 | 参数校验失败（手机号格式错误、邮箱格式错误等） |
+| 401 | 未授权 |
+| 1003 | 手机号已被使用 |
+| 2001 | 用户不存在 |
+
+---
+
+### 5. 获取当前用户信息
 
 获取当前登录用户的详细信息。
 

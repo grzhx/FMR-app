@@ -316,7 +316,13 @@ fun NavGraph(
                 onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
                 onLogout = { profileViewModel.logout() },
                 onRefresh = { profileViewModel.refreshUserInfo() },
-                onClearMessages = { profileViewModel.clearMessages() }
+                onClearMessages = { profileViewModel.clearMessages() },
+                onStartEditing = { profileViewModel.startEditing() },
+                onCancelEditing = { profileViewModel.cancelEditing() },
+                onSaveUserInfo = { profileViewModel.saveUserInfo() },
+                onUpdateEditField = { nickname, phone, email, avatarUrl ->
+                    profileViewModel.updateEditField(nickname, phone, email, avatarUrl)
+                }
             )
         }
 

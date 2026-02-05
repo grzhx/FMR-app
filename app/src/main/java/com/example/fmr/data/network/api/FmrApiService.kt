@@ -109,6 +109,14 @@ interface FmrApiService {
     @GET("auth/info")
     suspend fun getUserInfo(): Response<ApiResponse<UserInfo>>
 
+    /**
+     * 更新用户信息
+     */
+    @PUT("auth/info")
+    suspend fun updateUserInfo(
+        @Body request: UpdateUserInfoRequest
+    ): Response<ApiResponse<Unit>>
+
     // ==================== 病历导入模块 ====================
 
     /**

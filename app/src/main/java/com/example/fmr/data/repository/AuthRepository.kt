@@ -96,6 +96,28 @@ class AuthRepository(
     }
 
     /**
+     * 更新用户信息
+     */
+    fun updateUserInfo(
+        nickname: String? = null,
+        phone: String? = null,
+        email: String? = null,
+        avatarUrl: String? = null
+    ): Flow<NetworkResult<Unit>> = flow {
+        emit(NetworkResult.Loading)
+
+        val request = UpdateUserInfoRequest(
+            nickname = nickname,
+            phone = phone,
+            email = email,
+            avatarUrl = avatarUrl
+        )
+
+        val result = remoteDataSource.updateUserInfo(request)
+        emit(result)
+    }
+
+    /**
      * 检查是否已登录
      */
     fun isLoggedIn(): Boolean {

@@ -201,6 +201,85 @@ class ProfileViewModel(
             errorMessage = null
         )
     }
+
+    /**
+     * 开始编辑
+     */
+    fun startEditing() {
+        _uiState.value = _uiState.value.copy(
+            isEditing = true,
+            editNickname = _uiState.value.nickname ?: "",
+            editPhone = _uiState.value.phone ?: "",
+            editEmail = _uiState.value.email ?: "",
+            editAvatarUrl = _uiState.value.avatarUrl ?: ""
+        )
+    }
+
+    /**
+     * 取消编辑
+     */
+    fun cancelEditing() {
+        _uiState.value = _uiState.value.copy(isEditing = false)
+    }
+
+    /**
+     * 更新编辑字段
+     */
+    fun updateEditField(nickname: String? = null, phone: String? = null, email: String? = null, avatarUrl: String? = null) {
+        _uiState.value = _uiState.value.copy(
+            editNickname = nickname ?: _uiState.value.editNickname,
+            editPhone = phone ?: _uiState.value.editPhone,
+            editEmail = email ?: _uiState.value.editEmail,
+            editAvatarUrl = avatarUrl ?: _uiState.value.editAvatarUrl
+        )
+    }
+
+    /**
+     * 保存用户信息（只发送修改过的字段）
+     */
+    fun saveUserInfo() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            // 比较原值和编辑值，只发送变化的字段
+            val newNickname = state.editNickname.takeIf { it != (state.nickname ?: "") }
+            val newPhone = state.editPhone.takeIf { it != (state.phone ?: "") }
+            val newEmail = state.editEmail.takeIf { it != (state.email ?: "") }
+            val newAvatarUrl = state.editAvatarUrl.takeIf { it != (state.avatarUrl ?: "") }
+            
+            authRepository.updateUserInfo(
+                nickname = newNickname?.ifBlank { null },
+                phone = newPhone?.ifBlank { null },
+                email = newEmail?.ifBlank { null },
+                avatarUrl = newAvatarUrl?.ifBlank { null }
+            ).collect { result ->
+                when (result) {
+                    is NetworkResult.Loading -> {
+                        _uiState.value = _uiState.value.copy(isLoading = true)
+                    }
+                    is NetworkResult.Success -> {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isEditing = false,
+                            successMessage = "更新成功"
+                        )
+                        refreshUserInfo()
+                    }
+                    is NetworkResult.Error -> {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = result.message
+                        )
+                    }
+                    is NetworkResult.Exception -> {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = result.throwable.message ?: "更新失败"
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -219,7 +298,13 @@ data class ProfileUiState(
     val lastLoginTime: String? = null,
     val createTime: String? = null,
     val successMessage: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    // 编辑状态
+    val isEditing: Boolean = false,
+    val editNickname: String = "",
+    val editPhone: String = "",
+    val editEmail: String = "",
+    val editAvatarUrl: String = ""
 )
 
 /**

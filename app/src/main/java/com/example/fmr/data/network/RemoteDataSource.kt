@@ -134,6 +134,15 @@ class RemoteDataSource(
         }
     }
 
+    /**
+     * 更新用户信息
+     */
+    suspend fun updateUserInfo(request: UpdateUserInfoRequest): NetworkResult<Unit> {
+        return safeApiCall {
+            apiService.updateUserInfo(request)
+        }
+    }
+
     // ==================== 病历导入模块 ====================
 
     /**

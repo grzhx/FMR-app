@@ -57,6 +57,23 @@ data class LoginResponse(
 )
 
 /**
+ * 更新用户信息请求DTO
+ */
+data class UpdateUserInfoRequest(
+    @SerializedName("nickname")
+    val nickname: String? = null,
+
+    @SerializedName("phone")
+    val phone: String? = null,
+
+    @SerializedName("email")
+    val email: String? = null,
+
+    @SerializedName("avatarUrl")
+    val avatarUrl: String? = null
+)
+
+/**
  * 用户信息DTO
  */
 data class UserInfo(
