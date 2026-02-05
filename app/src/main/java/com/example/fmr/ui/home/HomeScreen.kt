@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fmr.data.entity.FamilyMember
 import com.example.fmr.data.entity.MedicalRecord
+import com.example.fmr.data.network.model.MemberProfileDto
 
 /**
  * 首页界面
@@ -31,6 +32,9 @@ import com.example.fmr.data.entity.MedicalRecord
 fun HomeScreen(
     uiState: HomeUiState,
     familyMembers: List<FamilyMember>,
+    selectedMember: FamilyMember?,
+    memberProfile: MemberProfileDto?,
+    onSelectMember: (FamilyMember) -> Unit,
     onNavigateToFamily: () -> Unit,
     onNavigateToRecords: () -> Unit,
     onNavigateToAddRecord: () -> Unit,
@@ -83,19 +87,21 @@ fun HomeScreen(
                     )
                 }
                 
-                // 家庭成员概览
+                // 成员选择器
                 item {
-                    FamilyMembersSection(
+                    MemberSelectorSection(
                         members = familyMembers,
-                        onViewAll = onNavigateToFamily
+                        selectedMember = selectedMember,
+                        onSelectMember = onSelectMember,
+                        onManageMembers = onNavigateToFamily
                     )
                 }
                 
-                // 健康摘要
+                // 选中成员的健康信息
                 item {
-                    HealthSummarySection(
-                        memberCount = uiState.memberCount,
-                        recordCount = uiState.recordCount
+                    MemberHealthInfoSection(
+                        member = selectedMember,
+                        profile = memberProfile
                     )
                 }
                 
@@ -538,5 +544,162 @@ private fun RecordItem(record: MedicalRecord) {
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+/**
+ * 成员选择器区域
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MemberSelectorSection(
+    members: List<FamilyMember>,
+    selectedMember: FamilyMember?,
+    onSelectMember: (FamilyMember) -> Unit,
+    onManageMembers: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "当前成员",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                TextButton(onClick = onManageMembers) {
+                    Text("管理")
+                    Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (members.isEmpty()) {
+                Text(
+                    text = "暂无家庭成员，请先添加",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedMember?.let { "${it.name} - ${it.getRelationText()}" } ?: "请选择成员",
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        members.forEach { member ->
+                            DropdownMenuItem(
+                                text = { Text("${member.name} - ${member.getRelationText()}") },
+                                onClick = {
+                                    onSelectMember(member)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 成员健康信息区域
+ */
+@Composable
+private fun MemberHealthInfoSection(
+    member: FamilyMember?,
+    profile: MemberProfileDto?
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "健康档案",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            if (member == null) {
+                Text(
+                    text = "请先选择家庭成员",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else if (profile == null) {
+                // 显示基本信息
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    HealthInfoItem(label = "年龄", value = "${member.calculateAge()}岁")
+                    HealthInfoItem(label = "性别", value = member.getGenderText())
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "暂无详细健康档案",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                // 基本信息行
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    HealthInfoItem(label = "身高", value = profile.height?.let { "${it}cm" } ?: "-")
+                    HealthInfoItem(label = "体重", value = profile.weight?.let { "${it}kg" } ?: "-")
+                    HealthInfoItem(label = "BMI", value = profile.bmi?.let { String.format("%.1f", it) } ?: "-")
+                    HealthInfoItem(label = "血型", value = profile.bloodType ?: "-")
+                }
+                
+                // 过敏史
+                if (!profile.allergies.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("过敏史: ", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                        Text(profile.allergies.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = Color(0xFFFF9800))
+                    }
+                }
+                
+                // 慢性病
+                if (!profile.chronicDiseases.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.LocalHospital, contentDescription = null, tint = Color(0xFF2196F3), modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("慢性病: ", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                        Text(profile.chronicDiseases.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = Color(0xFF2196F3))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 健康信息项
+ */
+@Composable
+private fun HealthInfoItem(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(text = label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

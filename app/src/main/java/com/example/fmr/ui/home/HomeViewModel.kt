@@ -8,6 +8,7 @@ import com.example.fmr.data.entity.MedicalRecord
 import com.example.fmr.data.network.ConnectionState
 import com.example.fmr.data.network.NetworkManager
 import com.example.fmr.data.network.model.HomeDashboardDto
+import com.example.fmr.data.network.model.MemberProfileDto
 import com.example.fmr.data.network.model.ProgressItemDto
 import com.example.fmr.data.repository.DashboardResult
 import com.example.fmr.data.repository.FamilyRepository
@@ -43,8 +44,25 @@ class HomeViewModel(
     // 当前选中的成员ID（用于获取仪表盘数据）
     private val _currentMemberId = MutableStateFlow<Long?>(null)
     
+    // 当前选中的成员
+    private val _selectedMember = MutableStateFlow<FamilyMember?>(null)
+    val selectedMember: StateFlow<FamilyMember?> = _selectedMember.asStateFlow()
+    
+    // 选中成员的健康档案
+    private val _memberProfile = MutableStateFlow<MemberProfileDto?>(null)
+    val memberProfile: StateFlow<MemberProfileDto?> = _memberProfile.asStateFlow()
+    
     init {
         loadDashboardData()
+        
+        // 监听成员列表变化，自动选中第一个成员
+        viewModelScope.launch {
+            familyMembers.collect { members ->
+                if (members.isNotEmpty() && _selectedMember.value == null) {
+                    selectMember(members.first())
+                }
+            }
+        }
         
         // 监听网络状态变化
         viewModelScope.launch {
@@ -160,6 +178,29 @@ class HomeViewModel(
     fun setCurrentMember(memberId: Long) {
         _currentMemberId.value = memberId
         loadDashboardData()
+    }
+    
+    /**
+     * 选择成员并加载其健康档案
+     */
+    fun selectMember(member: FamilyMember) {
+        _selectedMember.value = member
+        _currentMemberId.value = member.id
+        loadMemberProfile(member.id)
+    }
+    
+    /**
+     * 加载成员健康档案
+     */
+    private fun loadMemberProfile(memberId: Long) {
+        viewModelScope.launch {
+            try {
+                val profile = familyRepository.getMemberProfile(memberId)
+                _memberProfile.value = profile
+            } catch (e: Exception) {
+                _memberProfile.value = null
+            }
+        }
     }
     
     /**

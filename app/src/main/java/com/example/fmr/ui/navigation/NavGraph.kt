@@ -95,10 +95,15 @@ fun NavGraph(
         composable(Routes.HOME) {
             val uiState by homeViewModel.uiState.collectAsState()
             val familyMembers by homeViewModel.familyMembers.collectAsState()
+            val selectedMember by homeViewModel.selectedMember.collectAsState()
+            val memberProfile by homeViewModel.memberProfile.collectAsState()
             
             HomeScreen(
                 uiState = uiState,
                 familyMembers = familyMembers,
+                selectedMember = selectedMember,
+                memberProfile = memberProfile,
+                onSelectMember = { homeViewModel.selectMember(it) },
                 onNavigateToFamily = { navController.navigate(Routes.FAMILY_LIST) },
                 onNavigateToRecords = { navController.navigate(Routes.RECORD_LIST) },
                 onNavigateToAddRecord = { navController.navigate(Routes.ADD_RECORD) }
